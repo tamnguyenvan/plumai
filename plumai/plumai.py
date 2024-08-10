@@ -1,4 +1,6 @@
 import os
+import io
+import sys
 import re
 import json
 import argparse
@@ -54,6 +56,51 @@ def _cache_model_endpoint(model_name: str, endpoint: str) -> None:
     with open(CACHE_FILE, "w") as f:
         json.dump(cache, f)
 
+def _run_command(command):
+    """
+    Executes a shell command, prints its output to the terminal, and captures
+    both stdout and stderr into a result.
+
+    Parameters:
+    - command (str): The shell command to execute.
+
+    Returns:
+    - stdout_content (str): Captured standard output of the command.
+    - stderr_content (str): Captured standard error of the command.
+    """
+    # Create buffers to capture stdout and stderr
+    stdout_buffer = io.StringIO()
+    stderr_buffer = io.StringIO()
+
+    # Open the process
+    process = subprocess.Popen(
+        command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+
+    # Read the output and errors, while also printing them to the terminal
+    for stdout_line in iter(process.stdout.readline, ''):
+        sys.stdout.write(stdout_line)
+        stdout_buffer.write(stdout_line)
+
+    for stderr_line in iter(process.stderr.readline, ''):
+        sys.stderr.write(stderr_line)
+        stderr_buffer.write(stderr_line)
+
+    process.stdout.close()
+    process.stderr.close()
+    process.wait()
+
+    # Retrieve output from buffers
+    stdout_content = stdout_buffer.getvalue()
+    stderr_content = stderr_buffer.getvalue()
+    exit_code = process.returncode
+
+    return exit_code, stdout_content, stderr_content
+
 
 def _deploy(model_name: str, gpu_type: str, force: bool) -> str:
     cached_endpoint = _get_cached_model_endpoint(model_name)
@@ -72,15 +119,23 @@ def _deploy(model_name: str, gpu_type: str, force: bool) -> str:
     else:
         raise ValueError(f"{model_name} not found")
 
-    command = f"GPU_TYPE={gpu_type} modal deploy {model_file}"
     try:
+        print_plumai(f"Authorizing user...", Fore.BLUE)
+        command = "modal setup"
+        exit_code, _, _ = _run_command(command)
+        if exit_code != 0:
+            raise Exception("Failed to run modal setup")
+
         print_plumai(f"Deploying model {model_name} gpu: {gpu_type}.", Fore.BLUE)
         print_plumai(f"This may take a few minutes on the first deployment...", Fore.BLUE)
-        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-        output = result.stdout
+        command = f"GPU_TYPE={gpu_type} modal deploy {model_file}"
+        exit_code, stdout_content, stderr_content = _run_command(command)
+        if exit_code != 0:
+            print_plumai(stderr_content, Fore.RED)
+            raise Exception("Failed to run modal deploy")
 
         link_pattern = r'https://[^\s"]+'
-        match = re.search(link_pattern, output)
+        match = re.search(link_pattern, stdout_content)
         if match:
             model_endpoint = match.group(0)
         else:
@@ -90,11 +145,8 @@ def _deploy(model_name: str, gpu_type: str, force: bool) -> str:
         print_plumai(f"Model {model_name} deployed successfully.", Fore.GREEN)
         print_plumai(f"Model endpoint: {model_endpoint}", Fore.GREEN)
         return model_endpoint
-    except subprocess.CalledProcessError as e:
-        print_plumai(f"Failed to deploy model {model_name}. Return code: {e.returncode}", Fore.RED)
-        return
     except PlumAIDeploymentError as e:
-        print_plumai(f"Error: {str(e)}", Fore.RED)
+        print_plumai(f"Failed to deploy model {model_name}. Return code: {e.returncode}", Fore.RED)
         return
 
 
