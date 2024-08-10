@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlumAI - Deploy and Run AI models in a Single Command</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@latest/dist/full.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2/dist/tailwind.min.css" rel="stylesheet" type="text/css" />
+  <style>
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <nav class="navbar bg-gray-800 text-white p-4">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="#" class="text-2xl font-bold">PlumAI</a>
+      <!-- Links -->
+      <div class="flex items-center space-x-4">
+        <!-- Kofi -->
+        <a href='https://ko-fi.com/B0B5TU3OI' target='_blank'><img height='36' style='border:0px;height:36px;'
+            src='https://storage.ko-fi.com/cdn/kofi2.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
+        <!-- Github -->
+        <a href="https://github.com/tamnguyenvan/plumai" target="_blank" rel="noopener noreferrer"
+          class="link link-hover">GitHub</a>
+
+        <!-- Twitter/X -->
+        <a href="https://x.com/tamnvvn" target="_blank" rel="noopener noreferrer" class="link link-hover">Twitter/X</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="container mx-auto p-10 min-h-screen flex flex-col items-center">
+    <div class="flex flex-col items-center w-full mb-20">
+      <h2 class="text-5xl font-bold text-center mb-4">PlumAI</h2>
+      <p class="text-md text-center mt-2">
+        Deploy and run AI models in a single command
+      </p>
+    </div>
+
+    <div class="w-full flex flex-wrap lg:flex-nowrap min-h-screen">
+      <!-- Left Column -->
+      <div class="w-full lg:w-1/2 p-4 flex flex-col items-center">
+        <div class="form-control w-full max-w-lg">
+          <label class="label">
+            <span class="text-xl label-text">Model: {{ model_name }}</span>
+          </label>
+          <textarea id="prompt" class="textarea textarea-bordered h-24" placeholder="Enter your prompt"></textarea>
+          <div id="promptWarning" class="text-red-500 mt-2 hidden">Please enter a prompt before running.</div>
+          <button id="runBtn" class="btn btn-primary mt-2">Run</button>
+
+          <!-- Toggle Button for Options -->
+          <div class="mt-4 w-full">
+            <button id="toggleOptions" class="btn btn-neutral w-full">Advanced settings</button>
+            <div id="optionsContainer" class="mt-4 hidden bg-base-200 p-4 rounded-lg shadow-md">
+              <div class="mb-4">
+                <!-- Width -->
+                <label class="label">
+                  <span class="label-text">Width</span>
+                </label>
+                <input id="width" type="number" class="input input-bordered w-full" value="1024">
+
+                <!-- Height -->
+                <label class="label">
+                  <span class="label-text">Width</span>
+                </label>
+                <input id="height" type="number" class="input input-bordered w-full" value="1024">
+
+                <!-- Seed -->
+                <label class="label">
+                  <span class="label-text">Seed</span>
+                </label>
+                <input id="seed" type="number" class="input input-bordered w-full" value="-1"
+                  placeholder="Enter an integer">
+
+                <!-- Guidance scale -->
+                <label class="label">
+                  <span class="label-text">Guidance scale</span>
+                </label>
+                <input id="guidanceScale" type="number" class="input input-bordered w-full" value="3.5">
+
+                <!-- Steps -->
+                <label class="label">
+                  <span class="label-text">Number of steps</span>
+                </label>
+                <input id="nSteps" type="number" class="input input-bordered w-full" value="20">
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="w-full lg:w-1/2 p-4 flex flex-col items-center">
+        <div id="imageContainer"
+          class="relative w-full max-w-3xl bg-base-200 rounded-lg flex items-center justify-center overflow-hidden shadow-lg"
+          style="height: 32rem;">
+
+          <!-- Spinner -->
+          <div id="spinner" class="hidden">
+            <svg class="animate-spin -ml-1 mr-3 h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+              viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+              </path>
+            </svg>
+          </div>
+
+          <!-- Image -->
+          <img id="generatedImage" src="" alt="Generated image" class="hidden w-full h-full object-contain">
+        </div>
+        <a id="downloadBtn" href="#" download="plumai-image.png" class="btn btn-primary mt-2 hidden">Download</a>
+      </div>
+
+    </div>
+
+    <!-- Notes -->
+    <div class="container mx-auto max-w-3xl py-20">
+      <div class="text-left">
+        <ul class="list-disc list-inside space-y-4 text-lg">
+          <li>
+            The flux.1-dev model is non-commercial. By using it, you agree to the terms set by Black Forest Labs. For
+            specific information, read more <a href="https://huggingface.co/black-forest-labs/FLUX.1-dev"
+              target="_blank" rel="noopener noreferrer" class="link link-primary">here</a>.
+          </li>
+          <li>
+            Thanks to <a href="https://modal.com/" target="_blank" rel="noopener noreferrer"
+              class="link link-primary">Modal</a> for generously
+            providing free GPU and credits to run the model.
+          </li>
+          <li>
+            Please do not abuse the system. Modal has been very generous in providing free GPUs, so please respect them.
+          </li>
+          <li>
+            Special thanks to <a href="https://x.com/camenduru" target="_blank" rel="noopener noreferrer"
+              class="link link-primary">Camenduru</a>.
+            The inference code was heavily borrowed from his repository.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="faq-section mt-10">
+      <h3 class="text-3xl font-semibold mb-4 text-center">Frequently Asked Questions</h3>
+      <div class="collapse bg-base-200">
+        <input type="radio" name="my-accordion-1" checked="checked" />
+        <div class="collapse-title text-xl font-medium">What is PlumAI?</div>
+        <div class="collapse-content">
+          <p>PlumAI is a CLI tool that simplifies the deployment and running of AI models on Modal with a single command.
+          </p>
+        </div>
+      </div>
+      <div class="collapse bg-base-200">
+        <input type="radio" name="my-accordion-1" />
+        <div class="collapse-title text-xl font-medium">Which models does PlumAI currently support?</div>
+        <div class="collapse-content">
+          <p>PlumAI currently supports two image generation models from Black Forest Labs: flux.1-dev and flux.1-schnell.
+          </p>
+        </div>
+      </div>
+      <div class="collapse bg-base-200">
+        <input type="radio" name="my-accordion-1" />
+        <div class="collapse-title text-xl font-medium">Is PlumAI free to use?</div>
+        <div class="collapse-content">
+          <p>Yes, PlumAI is completely free and open-source.</p>
+        </div>
+      </div>
+
+      <div class="collapse bg-base-200">
+        <input type="radio" name="my-accordion-1" />
+        <div class="collapse-title text-xl font-medium">How much free credit does Modal provide?</div>
+        <div class="collapse-content">
+          <p>Modal provides $30 in free credits each month for registered users with a GitHub-linked account.</p>
+        </div>
+      </div>
+
+      <div class="collapse bg-base-200">
+        <input type="radio" name="my-accordion-1" />
+        <div class="collapse-title text-xl font-medium">How can I register for Modal's free credits?</div>
+        <div class="collapse-content">
+          <p>You can register for Modal’s free credits by linking your GitHub account to Modal.</p>
+        </div>
+      </div>
+
+      <div class="collapse bg-base-200">
+        <input type="radio" name="my-accordion-1" />
+        <div class="collapse-title text-xl font-medium">Can I use PlumAI without Modal credits?</div>
+        <div class="collapse-content">
+          <p>While PlumAI is free, using it to run models on Modal requires Modal credits. You need to have credits
+            available to deploy and run models.</p>
+        </div>
+      </div>
+
+      <div class="collapse bg-base-200">
+        <input type="radio" name="my-accordion-1" />
+        <div class="collapse-title text-xl font-medium">Where can I find the source code for PlumAI?</div>
+        <div class="collapse-content">
+          <p>The source code for PlumAI is available on my GitHub.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white p-4 mt-10">
+    <div class="container mx-auto text-center">
+      <p class="text-sm">Made by Tam Nguyen with <span class="text-red-500">&hearts;</span></p>
+    </div>
+  </footer>
+
+  <!-- Alert -->
+  <div id="alert" role="alert" class="hidden alert fixed bottom-5 max-w-lg left-1/2 transform -translate-x-1/2">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span id="alert-message">Error! Task failed.</span>
+  </div>
+
+  <script>
+    document.getElementById('runBtn').addEventListener('click', async () => {
+      try {
+        const prompt = document.getElementById('prompt').value;
+        if (!prompt.trim()) {
+          document.getElementById('promptWarning').classList.remove('hidden');
+          return;
+        }
+        document.getElementById('promptWarning').classList.add('hidden');
+
+        // Parameters
+        const width = document.getElementById('width').value;
+        const height = document.getElementById('height').value;
+        const seed = document.getElementById('seed').value;
+        const guidanceScale = document.getElementById('guidanceScale').value;
+        const nSteps = document.getElementById('nSteps').value;
+
+        const runBtn = document.getElementById('runBtn');
+        runBtn.classList.add('btn-disabled')
+        const toggleOptions = document.getElementById('toggleOptions');
+        toggleOptions.classList.add('btn-disabled')
+        document.getElementById('generatedImage').classList.add('hidden');
+        document.getElementById('downloadBtn').classList.add('hidden');
+        document.getElementById('spinner').classList.remove('hidden');
+
+        const response = await fetch('/api/generate-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: prompt,
+            width: width,
+            height: height,
+            seed: seed,
+            guidanceScale: guidanceScale,
+            nSteps: nSteps
+          })
+        });
+
+        const data = await response.json();
+        if (data.status === 'processing') {
+          const taskId = data.task_id;
+          const checkStatus = async () => {
+            const statusResponse = await fetch(`/api/task-status/${taskId}`);
+            const statusData = await statusResponse.json();
+            if (statusData.status === 'completed') {
+              const imageUrl = `data:image/png;base64,${statusData.image_base64}`;
+              document.getElementById('generatedImage').src = imageUrl;
+              document.getElementById('imageContainer').classList.remove('hidden');
+              document.getElementById('generatedImage').classList.remove('hidden');
+              document.getElementById('spinner').classList.add('hidden');
+
+              // Set up download button
+              const downloadBtn = document.getElementById('downloadBtn');
+              downloadBtn.href = imageUrl;
+              downloadBtn.classList.remove('hidden');
+              runBtn.classList.remove('btn-disabled')
+              toggleOptions.classList.remove('btn-disabled')
+
+              // Nofity user
+              showAlert('Done!', 'alert-info')
+            } else if (statusData.status === 'failed') {
+              console.error('Image generation failed:', statusData.message);
+              runBtn.classList.remove('btn-disabled')
+              toggleOptions.classList.remove('btn-disabled')
+
+              showAlert('An error occurred. Please try again.', 'alert-error');
+            } else {
+              setTimeout(checkStatus, 3000);
+            }
+          };
+          checkStatus();
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showAlert('An error occurred. Please try again.', 'alert-error');
+      }
+    });
+
+    function showAlert(message, alertType) {
+      const alert = document.getElementById('alert');
+      const alertMessage = document.getElementById('alert-message');
+      alertMessage.textContent = message;
+      alert.classList.remove('hidden');
+      alert.classList.add(alertType)
+      setTimeout(() => {
+        alert.classList.add('hidden');
+        alert.classList.remove(alertType)
+      }, 3000);
+    }
+
+    document.getElementById('toggleOptions').addEventListener('click', () => {
+      const optionsContainer = document.getElementById('optionsContainer');
+      optionsContainer.classList.toggle('hidden');
+    });
+  </script>
+</body>
+
+</html>
