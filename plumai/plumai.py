@@ -74,7 +74,7 @@ def _deploy(model_name: str, gpu_type: str, force: bool) -> str:
 
     command = f"GPU_TYPE={gpu_type} modal deploy {model_file}"
     try:
-        print_plumai(f"Deploying model {model_name} gpu: {gpu_type}.", Fore.BLU)
+        print_plumai(f"Deploying model {model_name} gpu: {gpu_type}.", Fore.BLUE)
         print_plumai(f"This may take a few minutes on the first deployment...", Fore.BLUE)
         result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
         output = result.stdout
