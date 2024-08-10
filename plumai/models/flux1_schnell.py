@@ -50,7 +50,7 @@ class Model:
 
         os.chdir("/TotoroUI")
 
-        subprocess.run("aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors -d /otoroUI/models/unet -o flux1-schnell.safetensors", shell=True,)
+        subprocess.run("echo && aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors -d /TotoroUI/models/unet -o flux1-schnell.safetensors", shell=True,)
         subprocess.run("aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/camenduru/FLUX.1-dev/resolve/main/ae.sft -d /TotoroUI/models/vae -o ae.sft", shell=True,)
         subprocess.run("aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/camenduru/FLUX.1-dev/resolve/main/clip_l.safetensors -d /TotoroUI/models/clip -o clip_l.safetensors", shell=True,)
         subprocess.run("aria2c --console-log-level=error -c -x 16 -s 16 -k 1M https://huggingface.co/camenduru/FLUX.1-dev/resolve/main/t5xxl_fp8_e4m3fn.safetensors -d /TotoroUI/models/clip -o t5xxl_fp8_e4m3fn.safetensors", shell=True,)

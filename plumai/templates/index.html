@@ -295,7 +295,7 @@
               // Nofity user
               showAlert('Done!', 'alert-info')
             } else if (statusData.status === 'failed') {
-              console.error('Image generation failed:', statusData.message);
+              console.error(`Image generation failed ${statusData.message}`);
               runBtn.classList.remove('btn-disabled')
               toggleOptions.classList.remove('btn-disabled')
 
