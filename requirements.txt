@@ -1,4 +1,0 @@
-Flask
-modal
-requests
-colorama
