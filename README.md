@@ -20,7 +20,7 @@
 
 ## [Aug 10, 2024] - 🎉 Added support for Flux models.
 
-- Added support for Flux models: `flux.1-dev` and `flux.1-schnell`.
+- Added support for Flux models: [`flux.1-dev`](https://huggingface.co/black-forest-labs/FLUX.1-dev) and [`flux.1-schnell`](https://huggingface.co/black-forest-labs/FLUX.1-schnell).
 
 
 ## Supported Platforms
@@ -65,6 +65,8 @@ plumai run flux.1-dev A10G
   - T4 (not recommended)
   - A10G (default)
   - A100
+  - L4
+  - H100
 
 - `f | --force`: Use this option to force redeployment of the model, ignoring the cache. If the model has already been deployed and cached, using `--force` will trigger a new deployment process.
 
