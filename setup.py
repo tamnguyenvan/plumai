@@ -6,7 +6,7 @@ def parse_requirements(filename):
 
 setup(
     name='plumai',
-    version='0.1.8',
+    version='0.1.9',
     py_modules=['plumai'],
     packages=find_packages(include=['plumai', 'plumai.*']),
     install_requires=parse_requirements('requirements.txt'),

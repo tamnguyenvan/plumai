@@ -1,7 +1,5 @@
 import os
-import io
 import sys
-import re
 import json
 import argparse
 import subprocess
@@ -14,6 +12,13 @@ from plumai.app import app
 
 # Initialize colorama
 init(autoreset=True)
+
+
+if platform.system() == "Windows":
+    from colorama import AnsiToWin32
+    sys.stdout = AnsiToWin32(sys.stdout).stream
+    sys.stderr = AnsiToWin32(sys.stderr).stream
+
 
 # Determine the cache directory based on the OS
 def get_cache_directory() -> Path:
@@ -33,7 +38,7 @@ class PlumAIDeploymentError(Exception):
     pass
 
 
-def print_plumai(message: str, color: str = Fore.WHITE) -> None:
+def print_message(message: str, color: str = Fore.WHITE) -> None:
     """Prints a message with a [plumai] prefix and optional color."""
     print(color + f"[plumai] {message}")
 
@@ -56,57 +61,28 @@ def _cache_model_endpoint(model_name: str, endpoint: str) -> None:
     with open(CACHE_FILE, "w") as f:
         json.dump(cache, f)
 
-def _run_command(command):
-    """
-    Executes a shell command, prints its output to the terminal, and captures
-    both stdout and stderr into a result.
 
-    Parameters:
-    - command (str): The shell command to execute.
+def _run_command(command: str, capture_output: bool = False):
+    """Run a command and return the exit code, stdout, and stderr."""
+    result = subprocess.run(command, shell=True, capture_output=capture_output, text=True)
+    return result.returncode, result.stdout, result.stderr
 
-    Returns:
-    - stdout_content (str): Captured standard output of the command.
-    - stderr_content (str): Captured standard error of the command.
-    """
-    # Create buffers to capture stdout and stderr
-    stdout_buffer = io.StringIO()
-    stderr_buffer = io.StringIO()
+def _get_model_endpoint(model_name: str) -> str:
+    exit_code, stdout, _ = _run_command("modal profile current", capture_output=True)
+    if exit_code != 0:
+        print_message(f"Could not get user profile. Return code: {exit_code}", Fore.RED)
+        return
 
-    # Open the process
-    process = subprocess.Popen(
-        command,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True
-    )
-
-    # Read the output and errors, while also printing them to the terminal
-    for stdout_line in iter(process.stdout.readline, ''):
-        sys.stdout.write(stdout_line)
-        stdout_buffer.write(stdout_line)
-
-    for stderr_line in iter(process.stderr.readline, ''):
-        sys.stderr.write(stderr_line)
-        stderr_buffer.write(stderr_line)
-
-    process.stdout.close()
-    process.stderr.close()
-    process.wait()
-
-    # Retrieve output from buffers
-    stdout_content = stdout_buffer.getvalue()
-    stderr_content = stderr_buffer.getvalue()
-    exit_code = process.returncode
-
-    return exit_code, stdout_content, stderr_content
+    profile_name = stdout.strip()
+    model_name = model_name.replace(".", "-")
+    return f"https://{profile_name}--{model_name}-model-web-inference.modal.run"
 
 
 def _deploy(model_name: str, gpu_type: str, force: bool) -> str:
     cached_endpoint = _get_cached_model_endpoint(model_name)
 
     if not force and cached_endpoint:
-        print_plumai(f"Model {model_name} is already deployed. Using cached endpoint.", Fore.GREEN)
+        print_message(f"Model {model_name} is already deployed. Using cached endpoint.", Fore.GREEN)
         return cached_endpoint
 
     root_dir = Path(__file__).parent
@@ -120,33 +96,30 @@ def _deploy(model_name: str, gpu_type: str, force: bool) -> str:
         raise ValueError(f"{model_name} not found")
 
     try:
-        print_plumai(f"Authorizing user...", Fore.BLUE)
+        print_message(f"Authorizing user...", Fore.BLUE)
         command = "modal setup"
         exit_code, _, _ = _run_command(command)
         if exit_code != 0:
             raise Exception("Failed to run modal setup")
 
-        print_plumai(f"Deploying model {model_name} gpu: {gpu_type}.", Fore.BLUE)
-        print_plumai(f"This may take a few minutes on the first deployment...", Fore.BLUE)
-        command = f"GPU_TYPE={gpu_type} modal deploy {model_file}"
+        print_message(f"Deploying model {model_name} gpu: {gpu_type}.", Fore.BLUE)
+        print_message(f"This may take a few minutes on the first deployment...", Fore.BLUE)
+
+        os.environ["GPU_TYPE"] = gpu_type
+        command = f"modal deploy {model_file}"
         exit_code, stdout_content, stderr_content = _run_command(command)
         if exit_code != 0:
-            print_plumai(stderr_content, Fore.RED)
+            print_message(stderr_content, Fore.RED)
             raise Exception("Failed to run modal deploy")
 
-        link_pattern = r'https://[^\s"]+'
-        match = re.search(link_pattern, stdout_content)
-        if match:
-            model_endpoint = match.group(0)
-        else:
-            raise PlumAIDeploymentError("Model endpoint not found.")
-
-        _cache_model_endpoint(model_name, model_endpoint)
-        print_plumai(f"Model {model_name} deployed successfully.", Fore.GREEN)
-        print_plumai(f"Model endpoint: {model_endpoint}", Fore.GREEN)
-        return model_endpoint
+        model_endpoint = _get_model_endpoint(model_name)
+        if model_endpoint:
+            _cache_model_endpoint(model_name, model_endpoint)
+            print_message(f"Model {model_name} deployed successfully.", Fore.GREEN)
+            print_message(f"Model endpoint: {model_endpoint}", Fore.GREEN)
+            return model_endpoint
     except PlumAIDeploymentError as e:
-        print_plumai(f"Failed to deploy model {model_name}. Return code: {e.returncode}", Fore.RED)
+        print_message(f"Failed to deploy model {model_name}. Error: {e}", Fore.RED)
         return
 
 
