@@ -143,8 +143,8 @@ def main():
                             choices=["flux.1-dev", "flux.1-schnell"],
                             help="Model name. Available options: flux.1-dev (default), flux.1-schnell")
     run_parser.add_argument("gpu_type", type=str, nargs="?", default="A10G",
-                            choices=["A10G", "A100"],
-                            help="GPU type. Available options: A10G (default), A100")
+                            choices=["T4", "A10G", "A100", "L4", "H100"],
+                            help="GPU type. Available options: T4 (not recommended), A10G (default), A100, L4, H100")
     run_parser.add_argument("-f", "--force", action="store_true",
                             help="Force redeployment of the model, ignoring the cache")
 
