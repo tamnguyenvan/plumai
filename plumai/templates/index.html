@@ -86,10 +86,10 @@
                   placeholder="Enter an integer">
 
                 <!-- Guidance scale -->
-                <label class="label">
+                <!-- <label class="label">
                   <span class="label-text">Guidance scale</span>
                 </label>
-                <input id="guidanceScale" type="number" class="input input-bordered w-full" value="3.5">
+                <input id="guidanceScale" type="number" class="input input-bordered w-full" value="3.5"> -->
 
                 <!-- Steps -->
                 <label class="label">
@@ -248,7 +248,8 @@
         const width = document.getElementById('width').value;
         const height = document.getElementById('height').value;
         const seed = document.getElementById('seed').value;
-        const guidanceScale = document.getElementById('guidanceScale').value;
+        // const guidanceScale = document.getElementById('guidanceScale').value;
+        const guidanceScale = 2.0;
         const nSteps = document.getElementById('nSteps').value;
 
         const runBtn = document.getElementById('runBtn');

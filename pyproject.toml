@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "plumai"
-version = "0.1.12"
+version = "0.1.13"
 authors = [
     {name = "Tam Nguyen", email = "tamnvhustcc@gmail.com"},
 ]
